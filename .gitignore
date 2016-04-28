@@ -37,3 +37,6 @@ build/
 
 log/
 consumer/spec/pacts/*.json
+provider/spec/pacts/*.json
+provider/reports/
+
