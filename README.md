@@ -293,7 +293,7 @@ Pact.service_provider "Our Provider" do
 end
 ```
 
-Now if we run our pact verification task, it should fail.
+Now if we copy the pact file from the consumer project and run our pact verification task, it should fail.
 
 ```console
     $ rake pact:verify
