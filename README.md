@@ -394,3 +394,70 @@ Now if we copy the pact file from the consumer project and run our pact verifica
 
 This has failed due to the provider state we defined. Luckily pact has been quite helpful and given us a snippet
 of what we need to do to fix it.
+
+## Step 5 - Correct provider states
+
+Add the snippet from the verification failure to the pact helper.
+
+spec/pact_helper.rb:
+
+```ruby
+Pact.provider_states_for "Our Consumer" do
+
+  provider_state "data count is > 0" do
+    set_up do
+      # Your set up code goes here
+    end
+  end
+
+end
+```
+
+and then re-run the provider verification.
+
+```console
+    $ rake pact:verify
+    SPEC_OPTS='' /home/ronald/.rvm/rubies/ruby-2.3.0/bin/ruby -S pact verify --pact-helper /home/ronald/Development/Projects/Pact/pact-workshop-ruby/spec/pact_helper.rb
+    Reading pact at spec/pacts/our_consumer-our_provider.json
+
+    Verifying a pact between Our Consumer and Our Provider
+      Given data count is > 0
+        a request for json data
+          with GET /provider.json?valid_date=Sun,%2020%20Mar%202016%2002:07:13%20GMT
+            returns a response which
+              has status code 200
+              has a matching body (FAILED - 1)
+              includes headers
+                "Content-Type" with value "application/json"
+
+    Failures:
+
+      1) Verifying a pact between Our Consumer and Our Provider Given data count is > 0 a request for json data with GET /provider.json?valid_date=Sun,%2020%20Mar%202016%2002:07:13%20GMT returns a response which has a matching body
+         Failure/Error: expect(response_body).to match_term expected_response_body, diff_options
+
+           Actual: {"test":"NO","valid_date":"2016-03-20T13:36:31+11:00","count":1000}
+
+           @@ -1,5 +1,4 @@
+            {
+           -  "date": "2013-08-16T15:31:20+10:00",
+           -  "count": 100
+           +  "count": 1000
+            }
+
+           Key: - means "expected, but was not found".
+                + means "actual, should not be found".
+                Values where the expected matches the actual are not shown.
+         # /home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/pact-1.9.0/bin/pact:4:in `<top (required)>'
+         # /home/ronald/.rvm/gems/ruby-2.3.0@example_pact/bin/pact:23:in `load'
+         # /home/ronald/.rvm/gems/ruby-2.3.0@example_pact/bin/pact:23:in `<main>'
+
+    1 interaction, 1 failure
+
+    Failed interactions:
+
+    bundle exec rake pact:verify:at[spec/pacts/our_consumer-our_provider.json] PACT_DESCRIPTION="a request for json data" PACT_PROVIDER_STATE="data count is > 0" # A request for json data given data count is > 0
+
+    For assistance debugging failures, run `bundle exec rake pact:verify:help`
+```
+
+The test has failed for 2 reasons. Firstly, the count field has a different value to what was expected by the consumer. Secondly, and more importantly, the consumer was expecting a date field.
