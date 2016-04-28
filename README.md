@@ -461,3 +461,93 @@ and then re-run the provider verification.
 ```
 
 The test has failed for 2 reasons. Firstly, the count field has a different value to what was expected by the consumer. Secondly, and more importantly, the consumer was expecting a date field.
+
+## Step 6 - Back to the client we go
+
+Let's correct the consumer tests to handle any integer for count and use the correct field for the date. First,
+to use type based matching for the data count, we need to enable v2 pact specification.
+
+spec/pact_helper.rb:
+
+```ruby
+require 'pact/consumer/rspec'
+
+Pact.service_consumer "Our Consumer" do
+  has_pact_with "Our Provider" do
+    mock_service :our_provider do
+      port 1234
+      pact_specification_version "2.0.0"
+    end
+  end
+end
+```
+
+Then we need to add a type matcher for `count` and change the field for the date to be `valid_date`. We can also
+add a regular expression to make sure the `valid_date` field is a valid date. This is important because we are
+parsing it.
+
+The updated consumer test is now:
+
+```ruby
+describe 'Pact with our provider', :pact => true do
+
+  subject { Client.new('localhost:1234') }
+
+  let(:date) { Time.now.httpdate }
+
+  describe "get json data" do
+
+    before do
+      our_provider.given("data count is > 0").
+        upon_receiving("a request for json data").
+        with(method: :get, path: '/provider.json', query: URI::encode('valid_date=' + date)).
+        will_respond_with(
+          status: 200,
+          headers: {'Content-Type' => 'application/json'},
+          body: {
+            "test" => "NO",
+            "valid_date" => Pact.term(
+                generate: "2013-08-16T15:31:20+10:00",
+                matcher: /\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}/),
+            "count" => Pact.like(100)
+          })
+    end
+
+    it "can process the json payload from the provider" do
+      expect(subject.process_data).to eql([1, Time.parse(json_data['valid_date'])])
+    end
+
+  end
+
+end
+```
+
+Re-run the specs will now generate an updated pact file.
+
+```console
+$ rake spec
+/home/ronald/.rvm/rubies/ruby-2.3.0/bin/ruby -I/home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-core-3.4.4/lib:/home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-support-3.4.1/lib /home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-core-3.4.4/exe/rspec --pattern spec/\*\*\{,/\*/\*\*\}/\*_spec.rb
+
+Client
+{
+          "test" => "NO",
+    "valid_date" => "2013-08-16T15:31:20+10:00",
+         "count" => 100
+}
+1
+2013-08-16 15:31:20 +1000
+  can process the json payload from the provider
+  Pact with our provider
+    get json data
+{
+          "test" => "NO",
+    "valid_date" => "2013-08-16T15:31:20+10:00",
+         "count" => 100
+}
+1
+2013-08-16 15:31:20 +1000
+      can process the json payload from the provider
+
+Finished in 0.13973 seconds (files took 0.1671 seconds to load)
+2 examples, 0 failures
+```
