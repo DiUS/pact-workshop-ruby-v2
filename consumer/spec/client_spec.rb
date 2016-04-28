@@ -6,7 +6,7 @@ describe Client do
   let(:json_data) do
     {
       "test" => "NO",
-      "date" => "2013-08-16T15:31:20+10:00",
+      "valid_date" => "2013-08-16T15:31:20+10:00",
       "count" => 100
     }
   end
@@ -14,7 +14,7 @@ describe Client do
 
   it 'can process the json payload from the provider' do
     allow(HTTParty).to receive(:get).and_return(response)
-    expect(subject.process_data).to eql([1, Time.parse(json_data['date'])])
+    expect(subject.process_data).to eql([1, Time.parse(json_data['valid_date'])])
   end
 
   describe 'Pact with our provider', :pact => true do
@@ -32,11 +32,17 @@ describe Client do
           will_respond_with(
             status: 200,
             headers: {'Content-Type' => 'application/json'},
-            body: json_data )
+            body: {
+              "test" => "NO",
+              "valid_date" => Pact.term(
+                  generate: "2013-08-16T15:31:20+10:00",
+                  matcher: /\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}/),
+              "count" => Pact.like(100)
+            })
       end
 
       it "can process the json payload from the provider" do
-        expect(subject.process_data).to eql([1, Time.parse(json_data['date'])])
+        expect(subject.process_data).to eql([1, Time.parse(json_data['valid_date'])])
       end
 
     end

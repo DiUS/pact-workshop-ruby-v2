@@ -21,7 +21,7 @@ class Client
     data = load_provider_json
     ap data
     value = 100 / data['count']
-    date = Time.parse(data['date'])
+    date = Time.parse(data['valid_date'])
     puts value
     puts date
     [value, date]
