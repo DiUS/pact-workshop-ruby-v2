@@ -11,7 +11,7 @@ Pact is a ruby gem that allows you to define a pact between service consumers an
 
 This allows you to test both sides of an integration point using fast unit tests.
 
-## Step 1 - Simple Consumer calling Provider
+## Step 1 - Simple customer calling Provider
 
 Given we have a client that needs to make a HTTP GET request to a sinatra webapp, and requires a response in JSON format. The client would look something like:
 
@@ -78,3 +78,73 @@ Running the client with the following rake task against the provider works nicel
         "valid_date" => "2016-03-20T13:00:11+11:00",
              "count" => 1000
     }
+
+## Step 2 - Client Tested but integration fails
+
+Now lets get the client to use the data it gets back from the provider. Here is the updated client method that uses the returned data:
+
+client.rb
+
+```ruby
+      def process_data
+        data = load_provider_json
+        ap data
+        value = 100 / data['count']
+        date = Time.parse(data['date'])
+        puts value
+        puts date
+        [value, date]
+      end
+```
+
+Add a spec to test this client:
+
+client_spec.rb:
+
+```ruby
+    require 'spec_helper'
+    require 'client'
+
+
+    describe Client do
+
+
+      let(:json_data) do
+        {
+          "test" => "NO",
+          "date" => "2013-08-16T15:31:20+10:00",
+          "count" => 100
+        }
+      end
+      let(:response) { double('Response', :success? => true, :body => json_data.to_json) }
+
+
+      it 'can process the json payload from the provider' do
+        HTTParty.stub(:get).and_return(response)
+        expect(subject.process_data).to eql([1, Time.parse(json_data['date'])])
+      end
+
+    end
+```
+
+Let's run this spec and see it all pass:
+
+```console
+    $ rake spec
+    /home/ronald/.rvm/rubies/ruby-2.3.0/bin/ruby -I/home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-core-3.4.3/lib:/home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-support-3.4.1/lib /home/ronald/.rvm/gems/ruby-2.3.0@example_pact/gems/rspec-core-3.4.3/exe/rspec --pattern spec/\*\*\{,/\*/\*\*\}/\*_spec.rb
+
+    Client
+    {
+         "test" => "NO",
+         "date" => "2013-08-16T15:31:20+10:00",
+        "count" => 100
+    }
+    1
+    2013-08-16 15:31:20 +1000
+      can process the json payload from the provider
+
+    Finished in 0.00582 seconds (files took 0.09577 seconds to load)
+    1 example, 0 failures
+```
+
+However, there is a problem with this integration point. The provider returns a 'valid_date' while the consumer is trying to use 'date', which will blow up when run for real even with the tests all passing. Here is where Pact comes in.
