@@ -551,3 +551,25 @@ Client
 Finished in 0.13973 seconds (files took 0.1671 seconds to load)
 2 examples, 0 failures
 ```
+
+## Step 7 - Verify the provider again
+
+Running the verification against the provider now passes. Yay!
+
+```console
+14:23 $ rake pact:verify
+SPEC_OPTS='' /home/ronald/.rvm/rubies/ruby-2.3.0/bin/ruby -S pact verify --pact-helper /home/ronald/Development/Projects/Pact/pact-workshop-ruby/spec/pact_helper.rb
+Reading pact at spec/pacts/our_consumer-our_provider.json
+
+Verifying a pact between Our Consumer and Our Provider
+  Given data count is > 0
+    a request for json data
+      with GET /provider.json?valid_date=Sun,%2020%20Mar%202016%2003:21:16%20GMT
+        returns a response which
+          has status code 200
+          has a matching body
+          includes headers
+            "Content-Type" with value "application/json"
+
+1 interaction, 0 failures
+```
