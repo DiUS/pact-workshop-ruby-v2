@@ -671,3 +671,8 @@ spec/pacts/our_consumer-our_provider.json:
   }
 }
 ```
+
+## Step 9 - Verify the provider with the missing/invalid date query parameter
+
+Let us run this updated pact file with our provider. We get a lot of errors because our provider fails with a 500 status and an HTML error page.
+Time to update the provider to handle these cases.
