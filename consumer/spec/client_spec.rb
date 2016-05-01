@@ -75,6 +75,18 @@ describe Client do
 
     end
 
+    describe "when there is no data" do
+
+      it "handles the 404 response" do
+        our_provider.given("data count is == 0").
+          upon_receiving("a request for json data").
+          with(method: :get, path: '/provider.json', query: URI::encode('valid_date=' + date)).
+          will_respond_with(status: 404)
+        expect(subject.process_data(date)).to eql([0, nil])
+      end
+
+    end
+
   end
 
 end

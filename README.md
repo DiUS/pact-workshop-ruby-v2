@@ -703,3 +703,46 @@ end
 ```
 
 Now the pact verification all passes.
+
+## Step 10 - Provider states
+
+We have one final thing to test for. If the provider ever returns a count of zero, we will get a division by
+zero error in our client. This is an important bit of information to add to our contract. Let us start with a
+consumer test for this.
+
+spec/client_spec.rb:
+
+```ruby
+describe "when there is no data" do
+
+  it "handles the 404 response" do
+    our_provider.given("data count is == 0").
+      upon_receiving("a request for json data").
+      with(method: :get, path: '/provider.json', query: URI::encode('valid_date=' + date)).
+      will_respond_with(status: 404)
+    expect(subject.process_data(date)).to eql([0, nil])
+  end
+
+end
+```
+
+This adds a new interaction to the pact file:
+
+spec/pacts/our_consumer-our_provider.json:
+
+```json
+{
+  "description": "a request for json data",
+  "provider_state": "data count is == 0",
+  "request": {
+    "method": "get",
+    "path": "/provider.json",
+    "query": "valid_date=Sun,%2020%20Mar%202016%2004:46:40%20GMT"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+    }
+  }
+}
+```
