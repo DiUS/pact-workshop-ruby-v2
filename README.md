@@ -676,3 +676,30 @@ spec/pacts/our_consumer-our_provider.json:
 
 Let us run this updated pact file with our provider. We get a lot of errors because our provider fails with a 500 status and an HTML error page.
 Time to update the provider to handle these cases.
+
+lib/provider.rb:
+
+```ruby
+class Provider < Sinatra::Base
+
+  get '/provider.json', :provides => 'json' do
+    if params[:valid_date].nil?
+      [400, '"valid_date is required"']
+    else
+      begin
+        valid_time = Time.parse(params[:valid_date])
+        JSON.pretty_generate({
+          :test => 'NO',
+          :valid_date => DateTime.now,
+          :count => 1000
+        })
+      rescue ArgumentError => e
+        [400, "\"\'#{params[:valid_date]}\' is not a date\""]
+      end
+    end
+  end
+
+end
+```
+
+Now the pact verification all passes.
