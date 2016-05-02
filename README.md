@@ -706,7 +706,7 @@ end
 
 Now the pact verification all passes.
 
-## Step 10 - Provider states
+## Step 11 - Provider states
 
 We have one final thing to test for. If the provider ever returns a count of zero, we will get a division by
 zero error in our client. This is an important bit of information to add to our contract. Let us start with a
