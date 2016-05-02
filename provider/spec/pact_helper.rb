@@ -12,7 +12,13 @@ Pact.provider_states_for "Our Consumer" do
 
   provider_state "data count is > 0" do
     set_up do
-      # Your set up code goes here
+      ProviderData.data_count = 1000
+    end
+  end
+
+  provider_state "data count is == 0" do
+    set_up do
+      ProviderData.data_count = 0
     end
   end
 

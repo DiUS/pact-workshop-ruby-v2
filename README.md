@@ -672,7 +672,7 @@ spec/pacts/our_consumer-our_provider.json:
 }
 ```
 
-## Step 9 - Verify the provider with the missing/invalid date query parameter
+## Step 9+10 - Verify the provider with the missing/invalid date query parameter
 
 Let us run this updated pact file with our provider. We get a lot of errors because our provider fails with a 500 status and an HTML error page.
 Time to update the provider to handle these cases.
@@ -704,7 +704,7 @@ end
 
 Now the pact verification all passes.
 
-## Step 10 - Provider states
+## Step 11 - Provider states
 
 We have one final thing to test for. If the provider ever returns a count of zero, we will get a division by
 zero error in our client. This is an important bit of information to add to our contract. Let us start with a
@@ -746,3 +746,66 @@ spec/pacts/our_consumer-our_provider.json:
   }
 }
 ```
+
+## Step 12 - provider states for the provider
+
+To be able to verify out provider, we create a data class that the provider can use, and then set the data in
+the state change setup callback.
+
+lib/provider.rb:
+
+```ruby
+class ProviderData
+  @@data_count = 1000
+  class << self
+    attr_accessor :data_count
+  end
+end
+
+class Provider < Sinatra::Base
+
+  get '/provider.json', :provides => 'json' do
+    if params[:valid_date].nil?
+      [400, '"valid_date is required"']
+    elsif ProviderData.data_count == 0
+      404
+    else
+      begin
+        valid_time = Time.parse(params[:valid_date])
+        JSON.pretty_generate({
+          :test => 'NO',
+          :valid_date => DateTime.now,
+          :count => ProviderData.data_count
+        })
+      rescue ArgumentError => e
+        [400, "\"\'#{params[:valid_date]}\' is not a date\""]
+      end
+    end
+  end
+
+end
+```
+
+Now we can set the data count appropriately.
+
+spec/pact_helper.rb:
+
+```ruby
+Pact.provider_states_for "Our Consumer" do
+
+  provider_state "data count is > 0" do
+    set_up do
+      ProviderData.data_count = 1000
+    end
+  end
+
+  provider_state "data count is == 0" do
+    set_up do
+      ProviderData.data_count = 0
+    end
+  end
+
+end
+```
+
+Running the provider verification passes. Awesome, we are all done.
