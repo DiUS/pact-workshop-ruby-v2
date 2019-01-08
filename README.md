@@ -579,7 +579,7 @@ Verifying a pact between Our Consumer and Our Provider
 In this step we are going to add a test for the case where the query parameter is missing or invalid. We do
 this by adding additional expectations.
 
-First, we need to update out client to take the date as a parameter.
+First, we need to update our client to take the date as a parameter.
 
 lib/client.rb:
 
